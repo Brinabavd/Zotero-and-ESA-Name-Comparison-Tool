@@ -19,7 +19,7 @@ Make sure to download the spreadsheet of ESA Professors, and have the filepath a
 
 2. Call the `esa_name_combiner` function in `main.py` and provide the file path for the ESA spreadsheet when prompted. The function will clean the names and save them to `esa_names.csv`.
 
-3. Call the `compare` function in `compare.py` and provide the file paths for `esa_names.csv` and `zotero_creators.csv`. The function will compare the names and create `citation_checker.csv` with an additional 'Appeared' column indicating if a name appeared in both datasets.
+3. Call the `compare` function in `main.py` and provide the file paths for `esa_names.csv` and `zotero_creators.csv`. The function will compare the names and create `citation_checker.csv` with an additional 'Appeared' column indicating if a name appeared in both datasets.
 
 
 
