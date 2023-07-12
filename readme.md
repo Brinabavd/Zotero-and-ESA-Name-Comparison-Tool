@@ -11,6 +11,7 @@ This tool is designed to compare names extracted from Zotero API and ESA spreads
 - `compare():` The `compare` function, which compares the names from `esa_names.csv` and `zotero_creators.csv` and saves the results in a CSV file called `citation_checker.csv`.
 ## Requirements
  Run `pip install -r requirements.txt`to get all python requirements necessary
+ 
 Make sure to download the spreadsheet of ESA Professors, and have the filepath available to paste into the terminal when prompted. One is included in `ESA coneferences.xlsx`, however this is probably out of date by the time this is seen.
 
 ## Usage
