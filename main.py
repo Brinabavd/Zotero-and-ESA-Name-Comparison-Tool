@@ -1,27 +1,101 @@
 import regex as re
 import pandas as pd
 from pyzotero import zotero
+import Levenshtein
+
+## Key Zotero Variables ##
+API_KEY = 'hzhh8Foo27nRP1yDcpi6Twaa'
+LIBRARY_TYPE = 'group'
+LIBRARY_ID = '4907635'
+SUBLIBRARY_ID = 'D7X5DJBX'
+
+
+
+## Name Checker ##
+
+
+def calculate_similarity(name1, name2):
+    return Levenshtein.distance(name1.lower(), name2.lower())
+
+
+## Finds duplicates with mispellings
+## and cleans them out of some list "names"
+def find_misspellings(names):
+    cleaned_names = []
+    misspellings = []
+
+    initials_last_names = set()
+    for name in names:
+        try:
+            first_name, last_name = name.split(' ', 1)
+        except Exception:
+            print("check this manually in the .csv for duplicates:", name) # A few names (12) are formatted strangely, we may need to check them manually
+            cleaned_names.append(name)
+            continue
+        initials_last_name = (first_name[0], last_name) #[0] first initial, [1], last name
+        is_unique = True
+
+        for existing_name in initials_last_names:
+            if (initials_last_name[0].lower() == existing_name[0].lower()) and (initials_last_name[1].lower() == existing_name[1].lower()): #if initial and last name
+                similarity_score = calculate_similarity(name, existing_name[0] + ' ' + existing_name[1]) # calculate similarity score
+                if similarity_score <= 3:  # AND if similar
+                    #print(name, "is similar to", existing_name[0] + ' ' + existing_name[1]) ## FOR CHECKING IN TERMINAL
+                    misspellings.append(name) # goes into misspellings column (nothing happens with this set right now)
+                    is_unique = False # not logged in cleaned names
+                    break
+
+        if is_unique:
+            #print(name, "is a unique name:", initials_last_name) ## FOR CHECKING IN TERMINAL
+            cleaned_names.append(name)
+            initials_last_names.add(initials_last_name)
+
+    return cleaned_names, misspellings
+
+
+## Zotero Scraper ##
+
+
 def zotero_name_scraper():
     # Create a Zotero API client
-    zot = zotero.Zotero('4907635', 'group', 'hzhh8Foo27nRP1yDcpi6Twaa')
+    zot = zotero.Zotero(LIBRARY_ID, LIBRARY_TYPE, API_KEY)
+    #items = zot.everything(zot.items())
 
-    items = zot.everything(zot.items())
+    allCollections = (zot.all_collections(collid=SUBLIBRARY_ID))
+    allCollections = [zot.collection_items_top(c['key']) for c in allCollections],
+    # allCollections is a list of lists, each being a subcollection
+    # of the collid 'D7X5DJBX'
+    
+
+
+
+    #print("ITEMS",items)
+
+
 
     # Create empty lists to store data
     first_names = []
     last_names = []
     full_names = []
+    
 
     # Iterate over items and extract author info
-    for item in items:
-        creators = item['data'].get('creators', [])
-        for creator in creators:
-            first_name = creator.get('firstName', '')
-            last_name = creator.get('lastName', '')
-            full_name = f"{first_name} {last_name}".strip()
-            first_names.append(first_name)
-            last_names.append(last_name)
-            full_names.append(full_name)
+
+    for collectionItems in allCollections:
+        if(len(collectionItems) == 0):
+                continue
+        for item in collectionItems:
+            if(len(item) == 0):
+                continue
+            for citation in item:
+                print("\n ITEM:",item)
+                creators = citation['data'].get('creators', [])
+                for creator in creators:
+                    first_name = creator.get('firstName', '')
+                    last_name = creator.get('lastName', '')
+                    full_name = f"{first_name} {last_name}".strip()
+                    first_names.append(first_name)
+                    last_names.append(last_name)
+                    full_names.append(full_name)
 
     # Create a DataFrame from the extracted data
     df = pd.DataFrame({'First Name': first_names, 'Last Name': last_names, 'Full Name': full_names})
@@ -29,12 +103,17 @@ def zotero_name_scraper():
     # Drop duplicate authors to keep each author only once
     df.drop_duplicates(inplace=True)
 
+    # check for mispellings
+
     # Save the DataFrame to a CSV file
     csv_file = 'zotero_creators.csv'
     df.to_csv(csv_file, index=False)
 
     # Print a message indicating the code has finished
     print("Zotero Scraping completed. Data saved to CSV file.")
+
+## 
+
 def esa_name_combiner():
     import pandas as pd
     import re
@@ -81,6 +160,8 @@ def esa_name_combiner():
         # Split names by comma or "&" and create separate rows for each name
         names_split = names.str.split('[,&]', expand=False)
         names_list = [name.strip() for sublist in names_split if isinstance(sublist, list) for name in sublist]
+        names_list, mispellings = find_misspellings(names_list)
+
 
         # Create a DataFrame with the modified names
         data = {'Full Name': names_list, 'First Name': '', 'Last Name': ''}
@@ -157,6 +238,8 @@ def compare(spreadsheet1, spreadsheet2):
 
     # Save the updated df_a with the indicator column
     df_a.to_csv('citation_checker.csv', index=False)
+
+
 zotero_name_scraper()
 esa_name_combiner()
 compare("esa_names.csv", "zotero_creators.csv" )
