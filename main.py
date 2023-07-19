@@ -29,7 +29,7 @@ def find_misspellings(names):
         try:
             first_name, last_name = name.split(' ', 1)
         except Exception:
-            print("check this manually in the .csv for duplicates:", name) # A few names (12) are formatted strangely, we may need to check them manually
+            print("check this entry manually:", name) # A few names (12) are formatted strangely, we may need to check them manually
             cleaned_names.append(name)
             continue
         initials_last_name = (first_name[0], last_name) #[0] first initial, [1], last name
@@ -58,60 +58,47 @@ def find_misspellings(names):
 def zotero_name_scraper():
     # Create a Zotero API client
     zot = zotero.Zotero(LIBRARY_ID, LIBRARY_TYPE, API_KEY)
-    #items = zot.everything(zot.items())
 
-    allCollections = (zot.all_collections(collid=SUBLIBRARY_ID))
-    allCollections = [zot.collection_items_top(c['key']) for c in allCollections],
-    # allCollections is a list of lists, each being a subcollection
-    # of the collid 'D7X5DJBX'
+    # Fetch all subcollections under the specified collid
+    allCollections = zot.all_collections(collid=SUBLIBRARY_ID)
 
+    # Create empty lists and a dictionary to store data
+    authors_collections = {}  
+    # Iterate over collections and subcollections
+    for collection in allCollections:
+        collectionItems = zot.collection_items_top(collection['key'])
+        if len(collectionItems) == 0:
+            continue
 
+        # Filter out any non-dictionary items
+        collectionItems = [item for item in collectionItems if isinstance(item, dict)]
 
-
-    #print("ITEMS",items)
-
-
-
-    # Create empty lists to store data
-    first_names = []
-    last_names = []
-    full_names = []
-
-
-    # Iterate over items and extract author info
-
-    for collectionItems in allCollections:
-        if(len(collectionItems) == 0):
-                continue
         for item in collectionItems:
-            if(len(item) == 0):
-                continue
-            for citation in item:
-                print("\n ITEM:",item)
-                creators = citation['data'].get('creators', [])
-                for creator in creators:
-                    first_name = creator.get('firstName', '')
-                    last_name = creator.get('lastName', '')
-                    full_name = f"{first_name} {last_name}".strip()
-                    first_names.append(first_name)
-                    last_names.append(last_name)
-                    full_names.append(full_name)
+            for citation in item.get('data', {}).get('creators', []):
+                first_name = citation.get('firstName', '')
+                last_name = citation.get('lastName', '')
+                full_name = f"{first_name} {last_name}".strip()
+                subcollection_name = collection['data'].get('name', '')  # Add subcollection name
+
+                # Add author and associated collection/subcollection to the dictionary
+                author_key = f"{first_name} {last_name}"
+                if author_key not in authors_collections:
+                    authors_collections[author_key] = {'First Name': first_name, 'Last Name': last_name, 'Full Name': full_name, 'Subcollections': []}
+                if subcollection_name not in authors_collections[author_key]['Subcollections']:
+                    authors_collections[author_key]['Subcollections'].append(subcollection_name)
 
     # Create a DataFrame from the extracted data
-    df = pd.DataFrame({'First Name': first_names, 'Last Name': last_names, 'Full Name': full_names})
+    df = pd.DataFrame(authors_collections.values())
+
+    # Convert 'Subcollections' column to comma-separated string
+    df['Subcollections'] = df['Subcollections'].apply(lambda x: ', '.join(x))
 
     # Drop duplicate authors to keep each author only once
     df.drop_duplicates(inplace=True)
 
-    # check for mispellings
-
     # Save the DataFrame to a CSV file
     csv_file = 'zotero_creators.csv'
     df.to_csv(csv_file, index=False)
-
-    # Print a message indicating the code has finished
-    print("Zotero Scraping completed. Data saved to CSV file.")
-
 ##
 
 
@@ -255,7 +242,7 @@ def compare(spreadsheet1, spreadsheet2):
             df_a.at[index_a, 'Appeared'] = 'Yes'
 
     # Save the updated df_a with the indicator column
-    df_a.to_csv('citation_checker.csv', index=False)
+    df_a.to_csv('citation_checker2.csv', index=False)
 
 
 zotero_name_scraper()
