@@ -9,6 +9,10 @@ LIBRARY_TYPE = 'group'
 LIBRARY_ID = '4907635'
 SUBLIBRARY_ID = 'D7X5DJBX'
 
+authors_collections = {}
+
+# for my testing - /Users/arinjaff/Downloads/ESA conferences.xlsx
+
 
 
 ## Name Checker ##
@@ -63,7 +67,6 @@ def zotero_name_scraper():
     allCollections = zot.all_collections(collid=SUBLIBRARY_ID)
 
     # Create empty lists and a dictionary to store data
-    authors_collections = {}  
     # Iterate over collections and subcollections
     for collection in allCollections:
         collectionItems = zot.collection_items_top(collection['key'])
@@ -82,8 +85,9 @@ def zotero_name_scraper():
 
                 # Add author and associated collection/subcollection to the dictionary
                 author_key = f"{first_name} {last_name}"
+                author_key = author_key.lower()
                 if author_key not in authors_collections:
-                    authors_collections[author_key] = {'First Name': first_name, 'Last Name': last_name, 'Full Name': full_name, 'Subcollections': []}
+                    authors_collections[author_key] = {'First Name': first_name.lower(), 'Last Name': last_name.lower(), 'Full Name': full_name.lower(), 'Subcollections': []}
                 if subcollection_name not in authors_collections[author_key]['Subcollections']:
                     authors_collections[author_key]['Subcollections'].append(subcollection_name)
 
@@ -197,6 +201,7 @@ def esa_name_combiner():
 def compare(spreadsheet1, spreadsheet2):
 
     # Read the two spreadsheets
+    #print(authors_collections)
     try:
         df_a = pd.read_excel(spreadsheet1, engine='openpyxl')
         df_b = pd.read_excel(spreadsheet2, engine='openpyxl')
@@ -218,6 +223,7 @@ def compare(spreadsheet1, spreadsheet2):
         first_name_a = row_a['First Name']
         last_name_a = row_a['Last Name']
         appeared = False
+        associated_value = None
 
         # Check if first name or last name is NaN in df_a
         if pd.isna(first_name_a) or pd.isna(last_name_a):
@@ -235,14 +241,17 @@ def compare(spreadsheet1, spreadsheet2):
             # Check if the first letter of first name is the same and last name is entirely the same
             if first_name_a[0] == first_name_b[0] and last_name_a == last_name_b:
                 appeared = True
+                #print(f"{first_name_a} {last_name_a}")
+                associated_value = authors_collections.get(f"{first_name_a} {last_name_a}")
                 break
 
         # Update the 'Appeared' column to 'Yes' if the name is found
         if appeared:
             df_a.at[index_a, 'Appeared'] = 'Yes'
+            df_a.at[index_a, 'Subcollections'] = str(associated_value)
 
     # Save the updated df_a with the indicator column
-    df_a.to_csv('citation_checker2.csv', index=False)
+    df_a.to_csv('citation_checker.csv', index=False)
 
 
 zotero_name_scraper()
