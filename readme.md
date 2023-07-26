@@ -12,7 +12,7 @@ This tool is designed to compare names extracted from Zotero API and ESA spreads
 ## Requirements
  Run `pip install -r requirements.txt`to get all python requirements necessary
  
-Make sure to download the spreadsheet of ESA Professors, and have the filepath available to paste into the terminal when prompted. One is included in `ESA coneferences.xlsx`, however this is probably out of date by the time this is seen.
+Make sure to download the spreadsheet of [ESA Professors](https://docs.google.com/spreadsheets/d/10CFTJkILtICKeVCvfSEqjr7c5aV04xPMcVCIq8LAZHE/edit#gid=951395880), and have the filepath available to paste into the terminal when prompted. One is included in `ESA coneferences.xlsx`, however this is probably out of date by the time this is seen.
 
 ## Usage
 
