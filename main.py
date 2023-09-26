@@ -61,11 +61,12 @@ from fuzzywuzzy import fuzz
 import time
 
 ## Key Zotero Variables for identifying library ##
+#%%
 ZOTERO_API_KEY = 'hzhh8Foo27nRP1yDcpi6Twaa' 
 LIBRARY_TYPE = 'group'
 LIBRARY_ID = '4907635'
 SUBLIBRARY_ID = 'D7X5DJBX'
-
+#%%
 ## Key Levenshtein Variables ##
 DOI_SIMILARITY_THRESHOLD = 10
 MISPELLINGS_SIMILARITY_HRESHOLD = 3
@@ -227,7 +228,9 @@ def esa_name_combiner():
         # Store the names in the respective lists
         full_names.extend(names_list)
         first_names.extend([name.split(' ', 1)[0] for name in names_list])
-        last_names.extend([name.split(' ', 1)[1] if len(name.split(' ', 1)) > 1 else '' for name in names_list])
+        #counting from front breaks with middle names
+        #last_names.extend([name.split(' ', 1)[1] if len(name.split(' ', 1)) > 1 else '' for name in names_list])
+        last_names.extend([name.split(' ', -1)[-1] if len(name.split(' ', 1)) > 1 else '' for name in names_list])
 
         # Handle different column names for 'Title of Presentation'
         if 'Title of Presentation' in dfex.columns:
@@ -415,10 +418,15 @@ def get_dois_from_titles():
     dfSafety.to_csv('dois_names.csv', index=False)
     print("Collected DOIs in csv file.")
 """
-
+#%%
 esa_name_combiner()
+#%%
+API_KEY = 'aH5jBb3zwqVk4chUWZL8aEzO' 
 zotero_name_scraper()
+#%%
 compare("esa_names.csv", "zotero_creators.csv" )
-
+##this code isn't working as intended. Filipe Araujo should be counted as included.
+#%%
 ## FOR DOI COLLECTION ##
 #get_dois_from_titles()
+#API_MASTER = aH5jBb3zwqVk4chUWZL8aEzO
